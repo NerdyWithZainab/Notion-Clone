@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     icon: [
       {
         media: "(prefers-color-scheme: light)",
-        url: "/logo.svg",
-        href: "/logo.svg"
+        url: "/notion.png",
+        href: "/notion.png"
       },
       {
         media: "(prefers-color-scheme: dark)",
-        url: "/logo-dark.svg",
-        href: "/logo-dark.svg"
+        url: "/notion-dark.png",
+        href: "/notion-dark.png"
       },
     ]
   }
