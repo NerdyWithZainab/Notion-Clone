@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: "https://funky-fish-19.clerk.accounts.dev",
+      domain: process.env.NEXT_CLERK_FRONTEND_API_URL,
       applicationID: "convex",
     },
   ],
