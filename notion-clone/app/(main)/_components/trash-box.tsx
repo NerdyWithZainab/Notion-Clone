@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { Spinner } from "@/components/spinner";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
@@ -7,9 +8,10 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { Search, Trash, Undo } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+
 export const TrashBox = () => {
   const router = useRouter();
   const params = useParams();
@@ -17,7 +19,7 @@ export const TrashBox = () => {
   const restore = useMutation(api.documents.restore);
   const remove = useMutation(api.documents.remove);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>("");
 
   const filteredDocuments = documents?.filter((document) => {
     return document.title.toLowerCase().includes(search.toLowerCase());
@@ -39,11 +41,7 @@ export const TrashBox = () => {
       error: "Failed to restore note.",
     });
   };
-  const onRemove = (
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    documentId: Id<"documents">
-  ) => {
-    event.stopPropagation();
+  const onRemove = (documentId: Id<"documents">) => {
     const promise = remove({ id: documentId });
     toast.promise(promise, {
       loading: "Deleting note...",
@@ -90,14 +88,17 @@ export const TrashBox = () => {
                 onClick={(e) => onRestore(e, document._id)}
                 role="button"
                 className="rounded-sm p-2 hover:bg-neutral-200"
-              ></div>
-              <Undo className="h-4 w-4 text-muted-foreground" />
-              <div
-                role="button"
-                className="rounded-sm p-2 hover:bg-neutral-200"
               >
-                <Trash className="h-4 w-4 text-muted-foreground" />
+                <Undo className="h-4 w-4 text-muted-foreground" />
               </div>
+              <ConfirmModal onConfirm={() => onRemove(document._id)}>
+                <div
+                  role="button"
+                  className="rounded-sm p-2 hover:bg-neutral-200"
+                >
+                  <Trash className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </ConfirmModal>
             </div>
           </div>
         ))}
@@ -105,3 +106,5 @@ export const TrashBox = () => {
     </div>
   );
 };
+
+export default TrashBox;
