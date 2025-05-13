@@ -243,8 +243,6 @@ export const update = mutation({
     }
     const userId = identity.subject;
 
-    const { ...rest } = args;
-
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
@@ -254,9 +252,9 @@ export const update = mutation({
     if (existingDocument.userId !== userId) {
       throw new Error("Unauthorized");
     }
-    const document = await ctx.db.patch(args.id, {
-      ...rest,
-    });
+
+    const { id, ...rest } = args;
+    const document = await ctx.db.patch(id, rest);
     return document;
   },
 });
