@@ -15,15 +15,19 @@ export const Banner = ({ documentId }: BannerProps) => {
 
   const remove = useMutation(api.documents.remove);
   const restore = useMutation(api.documents.restore);
-  const onRemove = () => {
-    const promise = remove({ id: documentId }).then(() => {
-      router.push("/documents");
-    });
+  const onRemove = async () => {
+    const promise = remove({ id: documentId });
     toast.promise(promise, {
       loading: "Deleting note...",
       success: "Note deleted!",
       error: "Failed to delete note.",
     });
+    try {
+      await promise;
+      router.push("/documents");
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
   };
   const onRestore = () => {
     const promise = restore({ id: documentId });

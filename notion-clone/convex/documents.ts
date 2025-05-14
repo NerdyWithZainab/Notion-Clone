@@ -160,51 +160,30 @@ export const restore = mutation({
 });
 
 export const remove = mutation({
-  args: { id: v.id("documents") },
+  args: {
+    id: v.id("documents"),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
       throw new Error("Not authenticated");
     }
-
     const userId = identity.subject;
-    const existingDocument = await ctx.db.get(args.id);
 
-    if (!existingDocument) {
-      console.warn("Attempted to delete non-existent document:", args.id);
-      throw new Error("Document not found");
+    const existDoc = await ctx.db.get(args.id);
+
+    if (!existDoc) {
+      throw new Error("Not found");
     }
 
-    if (existingDocument.userId !== userId) {
+    if (existDoc.userId !== userId) {
       throw new Error("Unauthorized");
     }
 
-    // If the document is not archived, perform a soft delete first
-    if (!existingDocument.isArchived) {
-      await ctx.db.patch(args.id, { isArchived: true });
-      console.info("Soft deleted (archived) document:", args.id);
-    } else {
-      // Handle any children (if applicable) by removing them as well
-      const recursiveDelete = async (documentId: Id<"documents">) => {
-        const children = await ctx.db
-          .query("documents")
-          .withIndex("by_user_parent", (q) =>
-            q.eq("userId", userId).eq("parentDocument", documentId)
-          )
-          .collect();
+    const document = await ctx.db.delete(args.id);
 
-        for (const child of children) {
-          await ctx.db.delete(child._id);
-          console.info("Permanently deleted child document:", child._id);
-        }
-      };
-
-      // Perform hard delete for the current document
-      await recursiveDelete(args.id);
-      await ctx.db.delete(args.id);
-      console.info("Permanently deleted document:", args.id);
-    }
+    return document;
   },
 });
 
@@ -233,7 +212,7 @@ export const getById = query({
     const document = await ctx.db.get(args.documentId);
 
     if (!document) {
-      throw new Error("Not found");
+      return null;
     }
 
     if (document.isPublished && !document.isArchived) {
@@ -241,11 +220,11 @@ export const getById = query({
     }
 
     if (!identity) {
-      throw new Error("Not authenticated");
+      return null;
     }
     const userId = identity.subject;
     if (document.userId !== userId) {
-      throw new Error("Unauthorized");
+      return null;
     }
     return document;
   },
