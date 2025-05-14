@@ -39,7 +39,7 @@ export const archive = mutation({
     const document = await ctx.db.patch(args.id, {
       isArchived: true,
     });
-    recursiveArchive(args.id);
+    await recursiveArchive(args.id);
     return document;
   },
 });
@@ -163,22 +163,48 @@ export const remove = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
+
     if (!identity) {
       throw new Error("Not authenticated");
     }
+
     const userId = identity.subject;
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       console.warn("Attempted to delete non-existent document:", args.id);
-      return;
+      throw new Error("Document not found");
     }
 
     if (existingDocument.userId !== userId) {
       throw new Error("Unauthorized");
     }
-    await ctx.db.delete(args.id);
-    return { success: true };
+
+    // If the document is not archived, perform a soft delete first
+    if (!existingDocument.isArchived) {
+      await ctx.db.patch(args.id, { isArchived: true });
+      console.info("Soft deleted (archived) document:", args.id);
+    } else {
+      // Handle any children (if applicable) by removing them as well
+      const recursiveDelete = async (documentId: Id<"documents">) => {
+        const children = await ctx.db
+          .query("documents")
+          .withIndex("by_user_parent", (q) =>
+            q.eq("userId", userId).eq("parentDocument", documentId)
+          )
+          .collect();
+
+        for (const child of children) {
+          await ctx.db.delete(child._id);
+          console.info("Permanently deleted child document:", child._id);
+        }
+      };
+
+      // Perform hard delete for the current document
+      await recursiveDelete(args.id);
+      await ctx.db.delete(args.id);
+      console.info("Permanently deleted document:", args.id);
+    }
   },
 });
 
