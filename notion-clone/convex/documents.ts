@@ -167,19 +167,18 @@ export const remove = mutation({
       throw new Error("Not authenticated");
     }
     const userId = identity.subject;
-
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
-      throw new Error("Not found");
+      console.warn("Attempted to delete non-existent document:", args.id);
+      return;
     }
 
     if (existingDocument.userId !== userId) {
       throw new Error("Unauthorized");
     }
-
-    const document = await ctx.db.delete(args.id);
-    return document;
+    await ctx.db.delete(args.id);
+    return { success: true };
   },
 });
 
