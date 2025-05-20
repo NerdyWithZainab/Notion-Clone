@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 const DocumentIdPage = () => {
   const { documentId } = useParams();
   const document = useQuery(api.documents.getById, {
-    documentId: documentId as Id<"documents">,
+    id: documentId as Id<"documents">,
   });
 
   if (document === undefined) {
