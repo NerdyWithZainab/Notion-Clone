@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 
 export const archive = mutation({
-  args: { id: v.id("documents") },
+  args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
@@ -12,7 +12,7 @@ export const archive = mutation({
     }
 
     const userId = identity.subject;
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.documentId);
 
     if (!existingDocument) {
       throw new Error("Not found");
@@ -36,10 +36,10 @@ export const archive = mutation({
       }
     };
 
-    const document = await ctx.db.patch(args.id, {
+    const document = await ctx.db.patch(args.documentId, {
       isArchived: true,
     });
-    await recursiveArchive(args.id);
+    await recursiveArchive(args.documentId);
     return document;
   },
 });
@@ -111,7 +111,7 @@ export const getTrash = query({
 });
 
 export const restore = mutation({
-  args: { id: v.id("documents") },
+  args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
@@ -120,7 +120,7 @@ export const restore = mutation({
     }
 
     const userId = identity.subject;
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.documentId);
 
     if (!existingDocument) {
       throw new Error("Not found");
@@ -153,14 +153,14 @@ export const restore = mutation({
         options.parentDocument = undefined;
       }
     }
-    const document = await ctx.db.patch(args.id, options);
-    recursiveRestore(args.id);
+    const document = await ctx.db.patch(args.documentId, options);
+    recursiveRestore(args.documentId);
     return document;
   },
 });
 
 export const remove = mutation({
-  args: { id: v.id("documents") },
+  args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
@@ -169,7 +169,7 @@ export const remove = mutation({
     // Fetch the document even if it is soft-deleted
     const existDoc = await ctx.db
       .query("documents")
-      .filter((q) => q.eq(q.field("_id"), args.id))
+      .filter((q) => q.eq(q.field("_id"), args.documentId))
       .first();
 
     if (!existDoc) throw new Error("Not found");
@@ -191,7 +191,7 @@ export const remove = mutation({
       await ctx.db.delete(documentId);
     };
 
-    await recursiveDelete(args.id);
+    await recursiveDelete(args.documentId);
   },
 });
 
@@ -235,7 +235,7 @@ export const getById = query({
 
 export const update = mutation({
   args: {
-    id: v.id("documents"),
+    documentId: v.id("documents"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     coverImage: v.optional(v.string()),
@@ -250,7 +250,7 @@ export const update = mutation({
     }
     const userId = identity.subject;
 
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.documentId);
 
     if (!existingDocument) {
       throw new Error("Not found");
@@ -260,8 +260,8 @@ export const update = mutation({
       throw new Error("Unauthorized");
     }
 
-    const { id, ...rest } = args;
-    const document = await ctx.db.patch(id, rest);
+    const { documentId, ...rest } = args;
+    const document = await ctx.db.patch(documentId, rest);
     return document;
   },
 });
