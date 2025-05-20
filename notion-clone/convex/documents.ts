@@ -214,7 +214,7 @@ export const getSearch = query({
 });
 
 export const getById = query({
-  args: { id: v.id("documents") },
+  args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
@@ -223,12 +223,12 @@ export const getById = query({
     // Change here: fetch even soft-deleted documents
     const doc = await ctx.db
       .query("documents")
-      .filter((q) => q.eq(q.field("_id"), args.id))
+      .filter((q) => q.eq(q.field("_id"), args.documentId))
       .first();
 
     if (!doc) throw new Error("Not found");
     if (doc.userId !== userId) throw new Error("Unauthorized");
-
+    console.log("Fetching document ID:", args.documentId);
     return doc;
   },
 });

@@ -7,9 +7,12 @@ import { Toolbar } from "@/components/toolbar";
 import { useParams } from "next/navigation";
 const DocumentIdPage = () => {
   const { documentId } = useParams();
-  const document = useQuery(api.documents.getById, {
-    id: documentId as Id<"documents">,
-  });
+  const document = useQuery(
+    api.documents.getById,
+    typeof documentId === "string"
+      ? { documentId: documentId as Id<"documents"> }
+      : "skip"
+  );
 
   if (document === undefined) {
     return <div>Loading...</div>;
