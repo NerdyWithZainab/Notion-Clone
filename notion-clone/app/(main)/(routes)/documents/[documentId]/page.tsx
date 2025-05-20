@@ -4,16 +4,11 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Toolbar } from "@/components/toolbar";
-
-interface DocumentIdPageProps {
-  params: {
-    documentId: Id<"documents">;
-  };
-}
-
-const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
+import { useParams } from "next/navigation";
+const DocumentIdPage = () => {
+  const { documentId } = useParams();
   const document = useQuery(api.documents.getById, {
-    documentId: params.documentId,
+    documentId: documentId as Id<"documents">,
   });
 
   if (document === undefined) {
@@ -21,7 +16,15 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
   }
 
   if (document === null) {
-    return <div>Not found</div>;
+    return (
+      // Permanently deleted
+      <div className="flex items-center justify-center h-screen text-muted-foreground">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">Document not found</h2>
+          <p className="mt-2">It may have been permanently deleted.</p>
+        </div>
+      </div>
+    );
   }
   return (
     <div className="pb-40">

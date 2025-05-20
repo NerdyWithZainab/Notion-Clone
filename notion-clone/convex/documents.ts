@@ -160,30 +160,38 @@ export const restore = mutation({
 });
 
 export const remove = mutation({
-  args: {
-    id: v.id("documents"),
-  },
+  args: { id: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
 
-    const existDoc = await ctx.db.get(args.id);
+    // Fetch the document even if it is soft-deleted
+    const existDoc = await ctx.db
+      .query("documents")
+      .filter((q) => q.eq(q.field("_id"), args.id))
+      .first();
 
-    if (!existDoc) {
-      throw new Error("Not found");
-    }
+    if (!existDoc) throw new Error("Not found");
+    if (existDoc.userId !== userId) throw new Error("Unauthorized");
 
-    if (existDoc.userId !== userId) {
-      throw new Error("Unauthorized");
-    }
+    // Recursive delete children
+    const recursiveDelete = async (documentId: Id<"documents">) => {
+      const children = await ctx.db
+        .query("documents")
+        .withIndex("by_user_parent", (q) =>
+          q.eq("userId", userId).eq("parentDocument", documentId)
+        )
+        .collect();
 
-    const document = await ctx.db.delete(args.id);
+      for (const child of children) {
+        await recursiveDelete(child._id);
+      }
 
-    return document;
+      await ctx.db.delete(documentId);
+    };
+
+    await recursiveDelete(args.id);
   },
 });
 
@@ -206,27 +214,22 @@ export const getSearch = query({
 });
 
 export const getById = query({
-  args: { documentId: v.id("documents") },
+  args: { id: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    const document = await ctx.db.get(args.documentId);
-
-    if (!document) {
-      return null;
-    }
-
-    if (document.isPublished && !document.isArchived) {
-      return document;
-    }
-
-    if (!identity) {
-      return null;
-    }
+    if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
-    if (document.userId !== userId) {
-      return null;
-    }
-    return document;
+
+    // Change here: fetch even soft-deleted documents
+    const doc = await ctx.db
+      .query("documents")
+      .filter((q) => q.eq(q.field("_id"), args.id))
+      .first();
+
+    if (!doc) throw new Error("Not found");
+    if (doc.userId !== userId) throw new Error("Unauthorized");
+
+    return doc;
   },
 });
 
