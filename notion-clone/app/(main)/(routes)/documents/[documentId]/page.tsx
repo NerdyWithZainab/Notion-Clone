@@ -5,15 +5,25 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Toolbar } from "@/components/toolbar";
 import { useParams } from "next/navigation";
+import { useState } from "react";
+import { Navbar } from "@/app/(main)/_components/navbar";
 const DocumentIdPage = () => {
   const { documentId } = useParams();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const validId =
+    typeof documentId === "string" && documentId.length === 22
+      ? (documentId as Id<"documents">)
+      : null;
+
   const document = useQuery(
     api.documents.getById,
-    typeof documentId === "string"
-      ? { documentId: documentId as Id<"documents"> }
-      : "skip"
+    validId ? { documentId: validId } : "skip"
   );
 
+  // Handle navbar width reset
+  const handleResetWidth = () => {
+    setIsCollapsed(false);
+  };
   if (document === undefined) {
     return <div>Loading...</div>;
   }
@@ -30,10 +40,16 @@ const DocumentIdPage = () => {
     );
   }
   return (
-    <div className="pb-40">
-      <div className="h-[35vh]" />
-      <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
-        <Toolbar initialData={document} />
+    <div>
+      <Navbar
+        isCollapsed={isCollapsed}
+        onResetWidth={handleResetWidth}
+      ></Navbar>
+      <div className="pb-40">
+        <div className="h-[35vh]" />
+        <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
+          <Toolbar initialData={document} />
+        </div>
       </div>
     </div>
   );

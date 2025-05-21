@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 
 export const archive = mutation({
-  args: { documentId: v.id("documents") },
+  args: { id: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
@@ -12,7 +12,7 @@ export const archive = mutation({
     }
 
     const userId = identity.subject;
-    const existingDocument = await ctx.db.get(args.documentId);
+    const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("Not found");
@@ -36,10 +36,10 @@ export const archive = mutation({
       }
     };
 
-    const document = await ctx.db.patch(args.documentId, {
+    const document = await ctx.db.patch(args.id, {
       isArchived: true,
     });
-    await recursiveArchive(args.documentId);
+    await recursiveArchive(args.id);
     return document;
   },
 });
@@ -154,25 +154,32 @@ export const restore = mutation({
       }
     }
     const document = await ctx.db.patch(args.documentId, options);
-    recursiveRestore(args.documentId);
+    await recursiveRestore(args.documentId);
     return document;
   },
 });
 
 export const remove = mutation({
-  args: { documentId: v.id("documents") },
+  args: { id: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
 
-    // Fetch the document even if it is soft-deleted
-    const existDoc = await ctx.db
-      .query("documents")
-      .filter((q) => q.eq(q.field("_id"), args.documentId))
-      .first();
+    // Fetch the document
+    const existDoc = await ctx.db.get(args.id);
 
-    if (!existDoc) throw new Error("Not found");
+    // If document doesn't exist, we can just return successfully
+    // This prevents errors when trying to delete an already deleted document
+    if (!existDoc) {
+      console.log(`Document ${args.id} already deleted or doesn't exist`);
+      return {
+        success: true,
+        message: "Document already deleted or doesn't exist",
+      };
+    }
+
+    // Authorization check
     if (existDoc.userId !== userId) throw new Error("Unauthorized");
 
     // Recursive delete children
@@ -188,13 +195,17 @@ export const remove = mutation({
         await recursiveDelete(child._id);
       }
 
-      await ctx.db.delete(documentId);
+      // Check if document still exists before deleting
+      const docToDelete = await ctx.db.get(documentId);
+      if (docToDelete) {
+        await ctx.db.delete(documentId);
+      }
     };
 
-    await recursiveDelete(args.documentId);
+    await recursiveDelete(args.id);
+    return { success: true, message: "Document and all children deleted" };
   },
 });
-
 export const getSearch = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -220,14 +231,19 @@ export const getById = query({
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
 
-    // Change here: fetch even soft-deleted documents
-    const doc = await ctx.db
-      .query("documents")
-      .filter((q) => q.eq(q.field("_id"), args.documentId))
-      .first();
+    // Fetch the document
+    const doc = await ctx.db.get(args.documentId);
 
-    if (!doc) throw new Error("Not found");
+    // Return null instead of throwing an error if doc not found
+    // This allows the UI to handle the case gracefully
+    if (!doc) {
+      console.log(`Document not found: ${args.documentId}`);
+      return null;
+    }
+
+    // Authorization check - only if doc exists
     if (doc.userId !== userId) throw new Error("Unauthorized");
+
     console.log("Fetching document ID:", args.documentId);
     return doc;
   },
