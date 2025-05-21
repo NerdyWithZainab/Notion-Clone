@@ -25,7 +25,7 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
         <div className="flex items-center gap-x-2 group/icon pt-6">
           <IconPicker onChange={handleIconChange}>
             <p className="text-6xl hover-opacity-75 transition">
-              {initialData.icon || "📄"}
+              {initialData.icon}
             </p>
           </IconPicker>
         </div>
