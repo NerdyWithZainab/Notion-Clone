@@ -29,7 +29,7 @@ export const Banner = ({ documentId }: BannerProps) => {
       <Button
         size="sm"
         onClick={onRestore}
-        className="border border-white bg-transparent hover:bg-primary/5 text-white hover:text-white p-1 px-2 h-auto font-normal rounded "
+        className="border border-white bg-transparent hover:bg-primary/5 text-white hover:text-white p-1 px-2 h-auto font-normal "
       >
         Restore Page
       </Button>
@@ -58,9 +58,12 @@ export const DeleteForeverButton = ({
 
   return (
     <ConfirmModal onConfirm={onDelete}>
-      <button className="border border-white bg-transparent hover:bg-primary/5 text-white hover:text-white p-1 px-2 h-auto font-normal rounded">
+      <Button
+        size="sm"
+        className="border border-white bg-transparent hover:bg-primary/5 text-white hover:text-white p-1 px-2 h-auto font-normal"
+      >
         Delete Forever
-      </button>
+      </Button>
     </ConfirmModal>
   );
 };
