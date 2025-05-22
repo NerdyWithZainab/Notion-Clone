@@ -17,10 +17,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const params = useParams();
 
   const rawId = params.documentId;
-  const validId =
-    typeof rawId === "string" && rawId.length === 22
-      ? (rawId as Id<"documents">)
-      : null;
+  const validId = typeof rawId === "string" ? (rawId as Id<"documents">) : null;
 
   const document = useQuery(
     api.documents.getById,

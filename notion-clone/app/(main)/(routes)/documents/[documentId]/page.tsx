@@ -7,18 +7,23 @@ import { Toolbar } from "@/components/toolbar";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Navbar } from "@/app/(main)/_components/navbar";
+
 const DocumentIdPage = () => {
   const { documentId } = useParams();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const validId =
-    typeof documentId === "string" && documentId.length === 22
-      ? (documentId as Id<"documents">)
-      : null;
+    typeof documentId === "string" ? (documentId as Id<"documents">) : null;
 
   const document = useQuery(
     api.documents.getById,
     validId ? { documentId: validId } : "skip"
   );
+  console.log("documentId from useParams:", documentId);
+  console.log("documentId:", documentId);
+  console.log("documentId type:", typeof documentId);
+  console.log("documentId length:", documentId?.length);
+
+  console.log("validId:", validId);
 
   // Handle navbar width reset
   const handleResetWidth = () => {

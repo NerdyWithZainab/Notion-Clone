@@ -111,7 +111,7 @@ export const getTrash = query({
 });
 
 export const restore = mutation({
-  args: { documentId: v.id("documents") },
+  args: { id: v.id("documents") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
@@ -120,7 +120,7 @@ export const restore = mutation({
     }
 
     const userId = identity.subject;
-    const existingDocument = await ctx.db.get(args.documentId);
+    const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("Not found");
@@ -153,8 +153,8 @@ export const restore = mutation({
         options.parentDocument = undefined;
       }
     }
-    const document = await ctx.db.patch(args.documentId, options);
-    await recursiveRestore(args.documentId);
+    const document = await ctx.db.patch(args.id, options);
+    await recursiveRestore(args.id);
     return document;
   },
 });
@@ -226,32 +226,15 @@ export const getSearch = query({
 
 export const getById = query({
   args: { documentId: v.id("documents") },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
-    const userId = identity.subject;
-
-    // Fetch the document
-    const doc = await ctx.db.get(args.documentId);
-
-    // Return null instead of throwing an error if doc not found
-    // This allows the UI to handle the case gracefully
-    if (!doc) {
-      console.log(`Document not found: ${args.documentId}`);
-      return null;
-    }
-
-    // Authorization check - only if doc exists
-    if (doc.userId !== userId) throw new Error("Unauthorized");
-
-    console.log("Fetching document ID:", args.documentId);
-    return doc;
+  handler: async ({ db }, { documentId }) => {
+    const doc = await db.get(documentId);
+    return doc ?? null; // ✅ Prevents Convex from throwing a server error
   },
 });
 
 export const update = mutation({
   args: {
-    documentId: v.id("documents"),
+    id: v.id("documents"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     coverImage: v.optional(v.string()),
@@ -266,7 +249,7 @@ export const update = mutation({
     }
     const userId = identity.subject;
 
-    const existingDocument = await ctx.db.get(args.documentId);
+    const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("Not found");
@@ -276,8 +259,8 @@ export const update = mutation({
       throw new Error("Unauthorized");
     }
 
-    const { documentId, ...rest } = args;
-    const document = await ctx.db.patch(documentId, rest);
+    const { id, ...rest } = args;
+    const document = await ctx.db.patch(id, rest);
     return document;
   },
 });
