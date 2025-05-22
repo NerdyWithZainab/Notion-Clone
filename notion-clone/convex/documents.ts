@@ -2,6 +2,38 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 
+export const deleteForever = mutation({
+  args: { id: v.id("documents") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const document = await ctx.db.get(args.id);
+    if (!document) throw new Error("Document not found");
+    if (document.userId !== userId) throw new Error("Unauthorized");
+
+    // Optional: Recursively delete children if needed
+    const recursiveDelete = async (docId: Id<"documents">) => {
+      const children = await ctx.db
+        .query("documents")
+        .withIndex("by_user_parent", (q) =>
+          q.eq("userId", userId).eq("parentDocument", docId)
+        )
+        .collect();
+
+      for (const child of children) {
+        await recursiveDelete(child._id);
+      }
+
+      await ctx.db.delete(docId);
+    };
+
+    await recursiveDelete(args.id);
+    return { success: true };
+  },
+});
+
 export const archive = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
@@ -159,53 +191,6 @@ export const restore = mutation({
   },
 });
 
-export const remove = mutation({
-  args: { id: v.id("documents") },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
-    const userId = identity.subject;
-
-    // Fetch the document
-    const existDoc = await ctx.db.get(args.id);
-
-    // If document doesn't exist, we can just return successfully
-    // This prevents errors when trying to delete an already deleted document
-    if (!existDoc) {
-      console.log(`Document ${args.id} already deleted or doesn't exist`);
-      return {
-        success: true,
-        message: "Document already deleted or doesn't exist",
-      };
-    }
-
-    // Authorization check
-    if (existDoc.userId !== userId) throw new Error("Unauthorized");
-
-    // Recursive delete children
-    const recursiveDelete = async (documentId: Id<"documents">) => {
-      const children = await ctx.db
-        .query("documents")
-        .withIndex("by_user_parent", (q) =>
-          q.eq("userId", userId).eq("parentDocument", documentId)
-        )
-        .collect();
-
-      for (const child of children) {
-        await recursiveDelete(child._id);
-      }
-
-      // Check if document still exists before deleting
-      const docToDelete = await ctx.db.get(documentId);
-      if (docToDelete) {
-        await ctx.db.delete(documentId);
-      }
-    };
-
-    await recursiveDelete(args.id);
-    return { success: true, message: "Document and all children deleted" };
-  },
-});
 export const getSearch = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
