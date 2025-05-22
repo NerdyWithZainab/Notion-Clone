@@ -17,7 +17,7 @@ export const TrashBox = () => {
   const params = useParams();
   const documents = useQuery(api.documents.getTrash);
   const restore = useMutation(api.documents.restore);
-  const remove = useMutation(api.documents.remove);
+  const remove = useMutation(api.documents.deleteForever);
 
   const [search, setSearch] = useState<string>("");
 
@@ -34,7 +34,7 @@ export const TrashBox = () => {
     documentId: Id<"documents">
   ) => {
     event.stopPropagation();
-    const promise = restore({ documentId: documentId });
+    const promise = restore({ id: documentId });
     toast.promise(promise, {
       loading: "Restoring note...",
       success: "Note restored!",
