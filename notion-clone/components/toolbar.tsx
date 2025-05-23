@@ -8,6 +8,7 @@ import { ImageIcon, Smile, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { ComponentRef, useRef, useState } from "react";
 import TextAreaAutoSize from "react-textarea-autosize";
+import { useCoverImage } from "@/hooks/use-cover-image";
 interface ToolbarProps {
   initialData: Doc<"documents">;
   preview?: boolean;
@@ -16,6 +17,8 @@ interface ToolbarProps {
 export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
   const update = useMutation(api.documents.update);
   const removeIcon = useMutation(api.documents.removeIcon);
+
+  const coverImage = useCoverImage();
   const inputRef = useRef<ComponentRef<"textarea">>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialData.title);
@@ -95,16 +98,15 @@ export const Toolbar = ({ initialData, preview }: ToolbarProps) => {
           </IconPicker>
         )}
         {!initialData.coverImage && !preview && (
-          <IconPicker asChild onChange={onIconSelect}>
-            <Button
-              className="text-muted-foreground text-xs"
-              variant="outline"
-              size="sm"
-            >
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Add cover
-            </Button>
-          </IconPicker>
+          <Button
+            className="text-muted-foreground text-xs"
+            variant="outline"
+            size="sm"
+            onClick={coverImage.onOpen}
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Add cover
+          </Button>
         )}
       </div>
       {isEditing && !preview ? (
