@@ -7,6 +7,7 @@ import { Toolbar } from "@/components/toolbar";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Navbar } from "@/app/(main)/_components/navbar";
+import { Cover } from "@/components/cover";
 
 const DocumentIdPage = () => {
   const { documentId } = useParams();
@@ -51,7 +52,7 @@ const DocumentIdPage = () => {
         onResetWidth={handleResetWidth}
       ></Navbar>
       <div className="pb-40">
-        <div className="h-[35vh]" />
+        <Cover />
         <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
           <Toolbar initialData={document} />
         </div>

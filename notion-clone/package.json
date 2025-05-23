@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.18.5",
+    "@edgestore/react": "^0.5.2",
+    "@edgestore/server": "^0.5.2",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-dialog": "^1.1.13",
@@ -28,10 +30,12 @@
     "notion-clone": "file:",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.8",
     "react-textarea-autosize": "^8.5.9",
     "sonner": "^2.0.3",
-    "tailwind-merge": "^3.2.0",
+    "tailwind-merge": "^3.3.0",
     "usehooks-ts": "^3.1.1",
+    "zod": "^3.25.23",
     "zustand": "^5.0.4"
   },
   "devDependencies": {
